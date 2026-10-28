@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>CodexToDoTree</title>
+  <script src="/bootstrap.js?v=__BUILD__"></script>
+  <link rel="stylesheet" href="/style.css?v=__BUILD__">
+  <link rel="stylesheet" href="/tree.css?v=__BUILD__">
+  <link rel="stylesheet" href="/workspace.css?v=__BUILD__">
+  <script src="/icons.js?v=__BUILD__" defer></script>
+  <script type="module" src="/app.js?v=__BUILD__"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="对话导航">
+      <div class="brand"><span class="brand-mark"><i data-lucide="workflow"></i></span><span>CodexToDoTree<small>WORKSPACE</small></span><button class="icon-button mobile-close" id="close-nav" title="关闭导航" aria-label="关闭导航"><i data-lucide="x"></i></button></div>
+      <div class="thread-navigation" id="thread-navigation"></div>
+      <div class="sidebar-footer"><i data-lucide="hard-drive"></i><span>本机工作区<small>任务数据仅保存在本机</small></span><span class="local-indicator"></span></div>
+    </aside>
+    <div class="nav-backdrop" id="nav-backdrop" hidden></div>
+    <div class="workspace">
+      <main id="main">
+        <h1 id="page-title" class="sr-only">当前对话任务</h1>
+        <section class="work-section">
+          <header class="work-toolbar"><div class="filter-controls"><button class="icon-button menu-button" id="open-nav" title="切换对话" aria-label="切换对话" aria-controls="sidebar" aria-expanded="false"><i data-lucide="panel-left"></i></button><div class="tabs" role="tablist" aria-label="工作项筛选"><button class="tab active" data-filter="all" role="tab" aria-selected="true">全部 <span id="all-count">0</span></button><button class="tab" data-filter="active" role="tab" aria-selected="false">进行中 <span id="active-count">0</span></button><button class="tab" data-filter="blocked" role="tab" aria-selected="false">需关注 <span id="blocked-count">0</span></button><button class="tab" data-filter="done" role="tab" aria-selected="false">已完成 <span id="done-count">0</span></button></div></div><div class="toolbar-end"><div class="search-field"><i data-lucide="search"></i><input id="search" type="search" placeholder="搜索工作项或阶段" aria-label="搜索工作项或阶段"></div><div class="view-switch" role="group" aria-label="显示方式"><button class="icon-button selected" id="view-list" title="列表视图" aria-label="列表视图" aria-pressed="true"><i data-lucide="list"></i></button><button class="icon-button" id="view-grid" title="网格视图" aria-label="网格视图" aria-pressed="false"><i data-lucide="layout-grid"></i></button></div></div></header>
+          <section id="load-error" class="load-error" role="alert" hidden><p></p><button id="reload-page">重新载入</button></section>
+          <div class="section-label"><span id="work-label">工作项</span><div class="tree-tools"><span id="metadata-warning" title="对话资料同步状态" hidden><i data-lucide="triangle-alert"></i></span><span id="updated-label">—</span><span class="connection" id="connection" role="status"><span></span>连接中</span><button class="icon-button" id="refresh" title="重新连接" aria-label="重新连接"><i data-lucide="refresh-cw"></i></button><button class="icon-button" id="expand-tree" title="展开所有阶段" aria-label="展开所有阶段"><i data-lucide="list-tree"></i></button><button class="icon-button" id="collapse-tree" title="收起所有阶段" aria-label="收起所有阶段"><i data-lucide="fold-vertical"></i></button></div></div><div id="boards" class="boards" aria-live="polite"></div>
+        </section>
+        <span id="footer-status" class="sr-only">等待连接</span>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
