@@ -2,16 +2,20 @@ import * as fs from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { startServer } from './server.mjs';
 import { command, ensureServer, snapshot, stopServer, threadId } from './client.mjs';
+import { runSetupCommand } from './setup-cli.mjs';
 
 const [action = 'url', ...args] = process.argv.slice(2);
 try {
-  if (action === 'serve') {
+  if (action === 'setup' || action === 'doctor') {
+    await runSetupCommand(action, args);
+  } else if (action === 'serve') {
     const service = await startServer();
     for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => service.close().then(() => process.exit(0)));
   } else if (action === 'url') {
     const { values } = parseArgs({ args, options: { thread: { type: 'string' } } });
+    const selectedThread = values.thread ?? process.env.CODEX_THREAD_ID;
     const url = await ensureServer();
-    console.log(values.thread ? `${url}/?thread=${encodeURIComponent(values.thread)}` : url);
+    console.log(selectedThread ? `${url}/?thread=${encodeURIComponent(selectedThread)}` : url);
   }
   else if (action === 'stop') console.log(await stopServer() ? 'CodexToDoTree stopped. Committed task state retained.' : 'CodexToDoTree is not running.');
   else if (action === 'list') {

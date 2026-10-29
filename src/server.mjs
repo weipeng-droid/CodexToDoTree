@@ -7,6 +7,7 @@ import { BoardStore, atomicJson, rejectLinks } from './store.mjs';
 import { InputError } from './model.mjs';
 import { ROOT, STATE } from './paths.mjs';
 import { CodexCatalog } from './catalog.mjs';
+import { VERSION } from './workflow.mjs';
 
 const assets = new Map([
   ['/', ['public/index.html', 'text/html; charset=utf-8']],
@@ -79,7 +80,7 @@ export async function startServer({ state = STATE, port = 47831, announce = true
       const route = requestUrl.pathname;
       const threadId = requestUrl.searchParams.get('thread');
       try {
-        if (req.method === 'GET' && route === '/api/health') return json(200, { service: 'codex-todo-tree', version: '0.1.0', build, pid: process.pid, viewers: clients.size, idleTimeoutMs });
+        if (req.method === 'GET' && route === '/api/health') return json(200, { service: 'codex-todo-tree', version: VERSION, build, pid: process.pid, viewers: clients.size, idleTimeoutMs });
         if (req.method === 'GET' && route === '/api/state') { lastUse = Date.now(); return json(200, store.snapshot(threadId)); }
         if (req.method === 'GET' && route === '/api/events') {
           if (clients.size >= 32) return json(503, { error: 'Too many live viewers.' });
@@ -127,7 +128,7 @@ export async function startServer({ state = STATE, port = 47831, announce = true
       await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
     });
     const url = `http://127.0.0.1:${server.address().port}`;
-    await atomicJson(path.join(state, 'endpoint.json'), { url, pid: process.pid, version: '0.1.0' });
+    await atomicJson(path.join(state, 'endpoint.json'), { url, pid: process.pid, version: VERSION });
     let refreshing = false;
     timer = setInterval(() => {
       if (refreshing) return;
