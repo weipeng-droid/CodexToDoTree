@@ -7,6 +7,7 @@ Use an exact conversation ID from the calling host. Every mutation is scoped by 
 | Tool | Required input | Purpose |
 | --- | --- | --- |
 | `console_open` | `thread_id` | Start/reuse the local broker and return this conversation's URL. Does not itself open host UI. |
+| `console_doctor` | optional `codex_home` | Read-only check of persistent global installation, path/capacity/rule integrity and overrides. Does not install files or start a broker. |
 | `console_plan` | `thread_id`, `board_id`, `thread_title`, `title`, `steps` | Create a new work item; all stages start todo. |
 | `console_update` | `thread_id`, `board_id`, `step_id` | Update status, add/move/rename stages, or annotate Chinese display. |
 | `console_watch` | identity, `thread_title`, `title`, `source_path` | Watch one dedicated existing task file, without writing it. |
@@ -40,6 +41,10 @@ String child IDs are generated deterministically from their parent and position 
 
 Run `node bin/cli.mjs <command>`. Installed binaries are `codex-todo-tree` and `codex-todo-tree-mcp`.
 
+`setup` previews by default. `setup --apply [--codex-home PATH] [--codex-metadata]` explicitly installs both MCP and full global workflow with backups. `--no-codex-metadata` explicitly disables a previously retained opt-in; it cannot be combined with `--codex-metadata`. `doctor [--codex-home PATH]` is read-only and returns nonzero when installation is missing/inconsistent. `npm run setup -- --instructions` prints the same canonical runtime instructions without installing. Source and packed installs use the same implementation; no postinstall silently edits the host profile.
+
+Delegation fields `tree_owner`, `owned_parent`, `writable_child_ids` and reviewer decisions belong to the workflow handoff/evidence, not extra accepted `console_update` parameters. The server has no actor ACL; do not imply these fields grant hard permissions. Each direct parent manages its own children and passes its delegated node upward for acceptance. See [the protocol](AGENTS.example.md).
+
 ```sh
 node bin/cli.mjs url --thread EXACT_THREAD_ID
 node bin/cli.mjs plan --thread EXACT_THREAD_ID --board feature --thread-title "Feature work" --title "Implement feature" --project "Example" --steps "Inspect|Build|Verify|Deliver"
@@ -55,6 +60,8 @@ node bin/cli.mjs list --all
 ```
 
 `--thread` may be omitted only when `CODEX_THREAD_ID` is set. No cwd-based fallback exists. Explicit `list --all` returns visible registered conversations; archived native conversations remain hidden when metadata sync is enabled.
+
+Exception for manual browsing only: `url` without either `--thread` or `CODEX_THREAD_ID` returns the unscoped base service address. It does not identify/register a conversation and must not be treated as automatic task integration. With an environment ID, `url` scopes and URL-encodes that ID; an explicit `--thread` takes priority.
 
 `serve` runs in the foreground for diagnostics. `stop` uses an authenticated local shutdown request; it preserves committed state but disconnects all dashboard tabs for this installation. Normal task completion must not call it.
 
