@@ -2,7 +2,7 @@
 
 **Recursive task trees for Codex. Live progress in a browser, not a wall of chat updates.**
 
-[中文文档](README.zh-CN.md) · [Workflow rules](docs/AGENTS.example.md) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
+[中文文档](README.zh-CN.md) · [Complete workflow rules](docs/AGENTS.example.md) · [Workflow coverage](docs/workflow-coverage.md) · [Security](SECURITY.md)
 
 ![Synthetic task-tree demo](docs/images/demo.jpg)
 
@@ -27,27 +27,33 @@ Prerequisites: **Node.js 22.13+ (24 LTS recommended)** and a local Codex/MCP cli
 git clone https://github.com/weipeng-droid/CodexToDoTree.git
 cd CodexToDoTree
 npm ci
-npm run setup
+npm run setup -- --apply --codex-metadata
+npm run doctor
 ```
 
-1. Add the generated `[mcp_servers.codex_todo_tree]` section to your Codex `config.toml`. The setup command prints the correct Node executable and absolute install path; it does **not** edit your settings.
-2. Run `npm run setup -- --instructions`. Merge its output into your existing global or project `AGENTS.md`, preserving unrelated rules.
-3. Restart/reload your MCP client, then run `codex mcp list`. Look for `codex_todo_tree`.
+1. `setup --apply` installs **both** the MCP configuration and the complete global `AGENTS.md` workflow in your Codex home (`CODEX_HOME`, otherwise the default Codex profile). It preserves unrelated text/settings, creates local backups, and ensures sufficient instruction capacity. `npm run setup` without `--apply` is preview-only; preview is not installation.
+2. `--codex-metadata` explicitly opts into read-only native project/archive sync, matching the full local workflow. Omit it if you do not want native metadata reads; task-label grouping still works, but native archive synchronization does not. The option stays enabled on subsequent upgrades; use `setup --apply --no-codex-metadata` to deliberately disable it without editing a protected block.
+3. Require a passing `doctor`, then restart/reload the MCP client and begin a new Codex run. Run `codex mcp list` and look for `codex_todo_tree`. Doctor proves installation consistency, not model obedience or UI capability.
 4. Start a new conversation and ask:
 
 > Use CodexToDoTree for this task. Read the real CODEX_THREAD_ID, create 4-8 main phases with nested substeps, open this conversation's task dashboard, and keep it updated until verification is complete.
 
 The agent calls `console_plan`, `console_open` and `console_update`. If Codex exposes its browser panel tool, the workflow opens the page on the right. Otherwise open the returned URL in your normal browser. A fresh URL alone shows an empty conversation until a plan is registered.
 
+The installed workflow delegates substantial implementation, assigns each parent only its **direct children**, requires independent review, and hands acceptance upward. A parent never self-accepts its delegated node. Implementation/review/acceptance are serial because the current model permits one executing leaf per board. See the [complete protocol](docs/AGENTS.example.md) and [Chinese handoff handbook](docs/workflow.zh-CN.md). MCP initialization also supplies the same rule source, but does not silently install global files.
+
+To inspect instructions without installing, use `npm run setup -- --instructions`. For a custom profile use `node bin/cli.mjs setup --apply --codex-home /absolute/profile --codex-metadata`, then `node bin/cli.mjs doctor --codex-home /absolute/profile`. These same commands work from an installed package with the `codex-todo-tree` binary. This repository provides source installation; it is **not** a claim the package has been published to the npm registry.
+
 Codex's standard MCP configuration is documented in [the official MCP guide](https://developers.openai.com/codex/mcp). This project does not require an OpenAI API key.
 
 ### Enable Native Project and Archive Sync
 
 ```sh
-npm run setup -- --codex-metadata
+npm run setup -- --apply --codex-metadata
+npm run doctor
 ```
 
-Use that generated config instead of adding a duplicate server. It sets `CODEX_TODO_TREE_CODEX_METADATA="1"`. The service reads only registered conversations' ID, archive flag, title and project mapping from local Codex metadata every 3 seconds. Archived chats disappear; unarchiving restores the same tasks. Nothing is written to Codex's database. Read failures retain the last valid view and show a warning.
+The installer updates its existing managed configuration instead of adding a duplicate server. It sets `CODEX_TODO_TREE_CODEX_METADATA="1"`. The service reads only registered conversations' ID, archive flag, title and project mapping from local Codex metadata every 3 seconds. Archived chats disappear; unarchiving restores the same tasks. Nothing is written to Codex's database. Read failures retain the last valid view and show a warning. Doctor reports this option's configuration, not proof that a particular native database version is supported.
 
 This is an **opt-in, version-dependent adapter**, not an official stable API. Without it, task-supplied project labels provide grouping and native archives are not synchronized. Changing the option requires stopping this tool's existing service and reopening it; changing only the MCP process environment cannot reconfigure an already running shared service.
 
@@ -106,7 +112,18 @@ The frontend is plain HTML/CSS/JavaScript, with no build step. Asset snapshots u
 
 ## Uninstall
 
-Remove only `[mcp_servers.codex_todo_tree]` and any associated env section from your Codex config. Remove the workflow rules you added, without replacing the rest of AGENTS.md. Use `node bin/cli.mjs stop` only when other conversations no longer need the shared service. Removing the clone does not delete saved history; delete the dedicated application-data directory separately only after backing it up.
+Remove only the section between `# CodexToDoTree BEGIN/END` in `config.toml`, and between `<!-- CodexToDoTree BEGIN/END -->` in global `AGENTS.md`. Leave unrelated settings/rules and instruction capacity intact. Reload the client. Use `node bin/cli.mjs stop` only when other conversations no longer need the service. Removing source does not delete saved history; delete that separately only after backing it up.
+
+## Upgrade and Recovery
+
+- Update source, run `npm ci`, `npm run setup -- --apply` and `npm run doctor`, then reload. The installer replaces its one managed block, preserves a larger existing capacity and retained metadata opt-in, and does not duplicate rules. Stop/reopen the old shared broker once after changing code; do not stop it at ordinary task completion.
+- Upgrading a manually configured 0.1 installation: first back up the profile. Remove **only** its old `codex_todo_tree` server/env section and the workflow text you manually added, preserving other content, then apply setup. An enabled legacy `task_console` must be deliberately migrated/disabled first. The installer refuses unmanaged conflicts rather than silently overwriting them or adding a second service.
+- Nonempty `AGENTS.override.md`, invalid TOML, edited managed rules/settings, symlinks, malformed markers or an active setup lock cause explicit failure. Both managed blocks have integrity hashes; custom fields/env inside the managed MCP block are not silently discarded. Preserve them and deliberately migrate before setup. Resolve the specific conflict; do not delete all settings/state. Projects can also override guidance and must be inspected separately.
+- Explicit `[agents] enabled=false` or a zero subagent limit makes doctor fail the complete-workflow check without changing that preference. Static checks report browser/subagent host capability as unverified; unavailable tools require honest degradation, not invented review/open results.
+- Backups named `AGENTS.md.codex-todo-tree-*.bak` and `config.toml.codex-todo-tree-*.bak` stay in the user's profile. They may contain secrets: **never upload them**. Compare current edits before manually restoring a backup. Unrelated preferences added after backup must be preserved.
+- Setup validates both proposed files before writing, uses a profile lock and snapshot checks, and attempts safe rollback on ordinary write failure. The lock coordinates this installer, not every editor; this is not an operating-system CAS or a power-loss-atomic two-file transaction. An interrupted process can leave its lock/partial managed installation. Confirm it stopped, inspect backups/current files, then recover and rerun doctor; never blindly remove another process's lock.
+
+No MCP can guarantee identical behavior for every client, model, remote executor or policy. Missing subagent/browser capabilities must be reported, not fabricated. Hierarchical ownership is a workflow contract, **not actor ACL enforcement**; evidence strings do not prove commands ran. Persistent rules, runtime guidance, actual tests and independent review are complementary gates.
 
 ## License
 

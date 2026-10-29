@@ -1,10 +1,15 @@
 {
   "name": "codex-todo-tree",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local-first MCP task trees and live progress dashboard for Codex.",
-  "repository": { "type":"git", "url":"https://github.com/weipeng-droid/CodexToDoTree.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/weipeng-droid/CodexToDoTree.git"
+  },
   "homepage": "https://github.com/weipeng-droid/CodexToDoTree#readme",
-  "bugs": { "url":"https://github.com/weipeng-droid/CodexToDoTree/issues" },
+  "bugs": {
+    "url": "https://github.com/weipeng-droid/CodexToDoTree/issues"
+  },
   "license": "MIT",
   "type": "module",
   "engines": {
@@ -19,6 +24,7 @@
     "src/",
     "public/",
     "docs/",
+    "scripts/setup.mjs",
     "README.md",
     "README.zh-CN.md",
     "LICENSE",
@@ -29,6 +35,7 @@
   "scripts": {
     "start": "node bin/cli.mjs url",
     "setup": "node scripts/setup.mjs",
+    "doctor": "node bin/cli.mjs doctor",
     "demo": "node scripts/demo.mjs",
     "package:smoke": "node scripts/package-smoke.mjs",
     "check": "node scripts/check.mjs && node scripts/privacy-check.mjs",
@@ -36,6 +43,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
-    "lucide": "1.63.0"
+    "lucide": "1.63.0",
+    "smol-toml": "1.9.1"
   }
 }
