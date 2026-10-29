@@ -14,7 +14,12 @@ test('real MCP initialize, tools/list, tools/call, CLI, and HTTP all use the sam
   const transport = new StdioClientTransport({ command: process.execPath, args: [path.join(ROOT, 'src/mcp.mjs')], env: { ...process.env, TASK_CONSOLE_STATE:state, CODEX_TODO_TREE_STATE:state } });
   const client = new Client({ name: 'task-console-acceptance', version: '1.0' });
   await client.connect(transport); t.after(() => client.close());
-  const tools = await client.listTools(); assert.equal(tools.tools.length, 5);
+  const tools = await client.listTools(); assert.equal(tools.tools.length, 6);
+  assert.match(client.getInstructions(), /manages only its direct children/);
+  assert.match(client.getInstructions().slice(0,512), /independent review/);
+  assert.equal(client.getServerVersion().version,'0.2.0');
+  const diagnosed=await client.callTool({name:'console_doctor',arguments:{codex_home:path.join(state,'missing-profile')}});
+  assert.equal(JSON.parse(diagnosed.content[0].text).ok,false);
   const opened=await client.callTool({name:'console_open',arguments:{thread_id:'test-thread-a'}});
   assert.equal(JSON.parse(opened.content[0].text).url,`${service.url}/?thread=test-thread-a`);
   const { action, ...input } = examplePlan();
@@ -46,4 +51,15 @@ test('CLI list defaults to the exact calling conversation; listing all is explic
   assert.equal(JSON.parse(own.stdout).boards.length,1); assert.ok(!own.stdout.includes('OTHER CONVERSATION TASK'));
   const all=await promisify(execFile)(process.execPath,[path.join(ROOT,'src/cli.mjs'),'list','--all'],{env});
   assert.equal(JSON.parse(all.stdout).boards.length,2);
+});
+test('CLI url uses the environment thread, explicit thread takes priority, and manual base mode remains unscoped', async t => {
+  const state=await fixture(t);const service=await startServer({state,port:0,announce:false,catalog:null});t.after(()=>service.close());
+  const env={...process.env,TASK_CONSOLE_STATE:state,CODEX_TODO_TREE_STATE:state,CODEX_THREAD_ID:'synthetic thread / 空格 &?'};
+  const cli=path.join(ROOT,'bin/cli.mjs');
+  const inherited=await promisify(execFile)(process.execPath,[cli,'url'],{env});
+  assert.equal(inherited.stdout.trim(),`${service.url}/?thread=${encodeURIComponent(env.CODEX_THREAD_ID)}`);
+  const explicit=await promisify(execFile)(process.execPath,[cli,'url','--thread','explicit synthetic /?'],{env});
+  assert.equal(explicit.stdout.trim(),`${service.url}/?thread=${encodeURIComponent('explicit synthetic /?')}`);
+  const manual=await promisify(execFile)(process.execPath,[cli,'url'],{env:{...env,CODEX_THREAD_ID:''}});
+  assert.equal(manual.stdout.trim(),service.url);
 });
